@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
+import os
 import numpy as np
 import cv2 as cv
 import cvui
@@ -17,6 +18,10 @@ def mouse_callback(event, x, y, flags, param):
 def main():
     global click_point
 
+    os.makedirs(os.path.join('capture', 'image'), exist_ok=True)
+    os.makedirs(os.path.join('capture', 'mask'), exist_ok=True)
+    os.makedirs(os.path.join('capture', 'maskimage'), exist_ok=True)
+
     setting_window_name = 'SETTING'
     image_window_name = 'IMAGE'
     mask_window_name = 'MASK'
@@ -24,8 +29,8 @@ def main():
     cvui.init(setting_window_name)
 
     cap = cv.VideoCapture(0)
-    cap.set(cv.CAP_PROP_FRAME_WIDTH, 640)
-    cap.set(cv.CAP_PROP_FRAME_HEIGHT, 480)
+    cap.set(cv.CAP_PROP_FRAME_WIDTH, 1280)
+    cap.set(cv.CAP_PROP_FRAME_HEIGHT, 720)
 
     cv.namedWindow(image_window_name)
     cv.setMouseCallback(image_window_name, mouse_callback)
@@ -40,6 +45,8 @@ def main():
     is_reverse = [False]
     top_area_number = [1]
     kernel_size = [3]
+
+    capture_count = 0
     while True:
         cvuiframe = np.zeros((390, 400, 3), np.uint8)
         cvuiframe[:] = (49, 52, 49)
@@ -84,6 +91,7 @@ def main():
         ret, frame = cap.read()
         if not ret:
             continue
+        frame = cv.resize(frame, (640, 360))
 
         if click_point is not None:
             hsv = cv.cvtColor(frame, cv.COLOR_BGR2HSV)
@@ -104,6 +112,7 @@ def main():
 
             click_point = None
 
+        mask = np.zeros(frame.shape, np.uint8)
         if hsv_point is not None:
             lower_hsv[0] = int(lower_h[0] / 2)
             lower_hsv[1] = int(lower_s[0])
@@ -123,20 +132,35 @@ def main():
                                        cv.CHAIN_APPROX_SIMPLE)[0]
             contours = sorted(
                 contours, key=lambda x: cv.contourArea(x), reverse=True)
-            out = np.zeros_like(mask_hsv)
-            mask = None
             for i, controur in enumerate(contours):
                 if i < top_area_number[0]:
                     mask = cv.drawContours(
-                        out, [controur], -1, color=255, thickness=-1)
+                        mask, [controur],
+                        -1,
+                        color=(255, 255, 255),
+                        thickness=-1)
 
-            if mask is not None:
-                if is_reverse[0]:
-                    mask = cv.bitwise_not(mask)
-                cv.imshow(mask_window_name, mask)
+            if is_reverse[0]:
+                mask = cv.bitwise_not(mask)
 
+        cutout_image = cv.bitwise_and(frame, mask)
+        debug_image = cv.hconcat([mask, cutout_image])
+
+        cv.imshow(mask_window_name, debug_image)
         cv.imshow(image_window_name, frame)
-        key = cv.waitKey(1)
+        key = cv.waitKey(10)
+        if key == 99:  # C
+            cv.imwrite(
+                os.path.join('capture', 'image',
+                             '{:05}.png'.format(capture_count)), frame)
+            cv.imwrite(
+                os.path.join('capture', 'mask',
+                             '{:05}.png'.format(capture_count)), mask)
+            cv.imwrite(
+                os.path.join('capture', 'maskimage',
+                             '{:05}.png'.format(capture_count)), cutout_image)
+            print('capture:', '{:05}.png'.format(capture_count))
+            capture_count += 1
         if key == 27:  # ESC
             break
 

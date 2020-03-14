@@ -37,6 +37,10 @@ python hsv_mask_extracter.py
 ・capture/mask
 
 ・capture/maskimage
+ 
+# Setting(GUI)
+
+
 
 # Author
 高橋かずひと(https://twitter.com/KzhtTkhs)

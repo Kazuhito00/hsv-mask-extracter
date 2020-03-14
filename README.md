@@ -30,6 +30,8 @@ python hsv_mask_extracter.py
 
 --waittime：処理フレーム間スリープ時間
 
+「CAPTURE FRAME」ウィンドウの任意のポイントをマウス左クリックすることで、ポイント箇所のHSV値を元にマスク画像を生成します。
+
 また、「C」を押すことで、入力画像、マスク画像、切り抜き画像を保存します。
 
 ・capture/image
@@ -39,6 +41,22 @@ python hsv_mask_extracter.py
 ・capture/maskimage
  
 # Setting(GUI)
+
+![2020-03-14](https://user-images.githubusercontent.com/37477845/76676149-d2746580-6603-11ea-8c96-808e036dc2e2.png)
+
+3本のトラックバーでH、S、Vの閾値を指定できます。
+
+HSV閾値は、「CAPTURE FRAME」ウィンドウの任意のポイントをマウス左クリックした際に初期値がセットされます。
+
+その他は以下の指定地です。
+
+TOP AREA NUMBER：マスクとして採用する領域の上位数(サイズ順)
+
+CLOSING KERNEL SIZE：クロージング処理のカーネルサイズ(N×N)
+
+MASK REVERSE：生成したマスク画像を反転
+
+CONTINUOUS CAPTURE：
 
 
 

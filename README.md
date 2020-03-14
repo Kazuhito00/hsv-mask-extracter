@@ -68,7 +68,7 @@ cvoverlayimg is under [MIT license](https://en.wikipedia.org/wiki/MIT_License).
 
 # cvui License
 
-設定用のGUIにはcvuiを改造したものを利用しています。
+設定用のGUIには、cvuiを改造したものを利用しています。
 
 The original part of cvui is distributed under the MIT license.
 

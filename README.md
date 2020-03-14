@@ -1,7 +1,7 @@
 # hsv-mask-extracter
  hsv-mask-extracterはHSV値を閾値にしたマスク画像を生成するプログラムです。
 
-# 動作例(Youtube)
+## 動作例(Youtube)
 [![](https://img.youtube.com/vi/R-w-efaOKbY/0.jpg)](https://www.youtube.com/watch?v=R-w-efaOKbY)
 
 # Requirement
@@ -19,6 +19,17 @@
 ```bash
 python hsv_mask_extracter.py
 ```
+
+以下のコマンドラインオプションがあります。
+
+--device：OpenCVのVideoCapture()で開くカメラデバイスorファイル
+
+--width：カメラキャプチャサイズ(幅)
+
+--height：カメラキャプチャサイズ(高さ)
+
+--waittime：処理フレーム間スリープ時間
+
 
 # Author
 高橋かずひと(https://twitter.com/KzhtTkhs)

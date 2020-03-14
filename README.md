@@ -30,6 +30,13 @@ python hsv_mask_extracter.py
 
 --waittime：処理フレーム間スリープ時間
 
+また、「C」を押すことで、入力画像、マスク画像、切り抜き画像を保存します。
+
+・capture/image
+
+・capture/mask
+
+・capture/maskimage
 
 # Author
 高橋かずひと(https://twitter.com/KzhtTkhs)

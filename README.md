@@ -56,7 +56,7 @@ CLOSING KERNEL SIZE：クロージング処理のカーネルサイズ(N×N)
 
 MASK REVERSE：生成したマスク画像を反転
 
-CONTINUOUS CAPTURE：
+CONTINUOUS CAPTURE：連写(Cを押さなくても自動で毎フレーム画像を保存する)
 
 
 

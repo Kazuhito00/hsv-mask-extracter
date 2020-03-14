@@ -1,168 +1,240 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
+"""
+[summary]
+  HSV値によるマスク処理プログラム
+[description]
+  -
+"""
 
 import os
+import argparse
+
 import numpy as np
 import cv2 as cv
-import cvui
 
-click_point = None
+from gui.frame_gui import FrameGui
+from gui.debug_gui import DebugGui
+from gui.setting_gui import SettingGui
 
 
-def mouse_callback(event, x, y, flags, param):
-    global click_point
-    if event == cv.EVENT_LBUTTONDOWN:
-        click_point = [x, y]
+def get_args():
+    """
+    [summary]
+        引数解析
+    Parameters
+    ----------
+    None
+    """
+
+    parser = argparse.ArgumentParser()
+
+    parser.add_argument("--device", help='camera device number', default=0)
+    parser.add_argument(
+        "--width", help='capture width', type=int, default=1280)
+    parser.add_argument(
+        "--height", help='capture height', type=int, default=720)
+    parser.add_argument(
+        "--waittime", help='waitkey time(ms)', type=int, default=10)
+    parser.add_argument(
+        "--pos_offset", help='window position offset', type=int, default=50)
+
+    args = parser.parse_args()
+
+    return args
 
 
 def main():
-    global click_point
+    """
+    [summary]
+        main()
+    Parameters
+    ----------
+    None
+    """
+    # 引数解析 #################################################################
+    args = get_args()
+    cap_device = args.device
+    cap_width = args.width
+    cap_height = args.height
+    waittime = args.waittime
+    pos_offset = args.pos_offset
 
-    os.makedirs(os.path.join('capture', 'image'), exist_ok=True)
-    os.makedirs(os.path.join('capture', 'mask'), exist_ok=True)
-    os.makedirs(os.path.join('capture', 'maskimage'), exist_ok=True)
+    # カメラ準備 ###############################################################
+    cap = cv.VideoCapture(cap_device)
+    cap.set(cv.CAP_PROP_FRAME_WIDTH, cap_width)
+    cap.set(cv.CAP_PROP_FRAME_HEIGHT, cap_height)
 
-    setting_window_name = 'SETTING'
-    image_window_name = 'IMAGE'
-    mask_window_name = 'MASK'
+    # 画像保存先準備 ###########################################################
+    path_save_image = os.path.join('capture', 'image')
+    path_save_mask = os.path.join('capture', 'mask')
+    path_save_cutoutimage = os.path.join('capture', 'maskimage')
+    os.makedirs(path_save_image, exist_ok=True)
+    os.makedirs(path_save_mask, exist_ok=True)
+    os.makedirs(path_save_cutoutimage, exist_ok=True)
 
-    cvui.init(setting_window_name)
+    # 画像ファイル名用番号
+    capture_count = len(os.listdir(path_save_image))
 
-    cap = cv.VideoCapture(0)
-    cap.set(cv.CAP_PROP_FRAME_WIDTH, 1280)
-    cap.set(cv.CAP_PROP_FRAME_HEIGHT, 720)
+    # GUI準備 #################################################################
+    setting_gui = SettingGui(window_position=[pos_offset, pos_offset])
+    debug_gui = DebugGui(window_position=[pos_offset, pos_offset + 500])
+    frame_gui = FrameGui(window_position=[pos_offset + 430, pos_offset])
 
-    cv.namedWindow(image_window_name)
-    cv.setMouseCallback(image_window_name, mouse_callback)
-
-    hsv_point = None
-
+    # HSVマスク 上限下限保持用変数
     lower_hsv = [0, 0, 0]
     upper_hsv = [0, 0, 0]
-    lower_h, upper_h = [0.0], [0.0]
-    lower_s, upper_s = [0.0], [0.0]
-    lower_v, upper_v = [0.0], [0.0]
-    is_reverse = [False]
-    top_area_number = [1]
-    kernel_size = [3]
 
-    capture_count = 0
     while True:
-        cvuiframe = np.zeros((390, 400, 3), np.uint8)
-        cvuiframe[:] = (49, 52, 49)
-
-        cvui.trackbar2(cvuiframe, 90, 30, 300, lower_h, upper_h, 0, 360, 1,
-                       '%.0Lf')
-        cvui.printf(cvuiframe, 10, 40, 0.4, 0xffffff, 'H MAX : %d', upper_h[0])
-        cvui.printf(cvuiframe, 10, 60, 0.4, 0xffffff, 'H MIN : %d', lower_h[0])
-
-        cvui.trackbar2(cvuiframe, 90, 100, 300, lower_s, upper_s, 0, 255, 1,
-                       '%.0Lf')
-        cvui.printf(cvuiframe, 10, 110, 0.4, 0xffffff, 'S MAX : %d',
-                    upper_s[0])
-        cvui.printf(cvuiframe, 10, 130, 0.4, 0xffffff, 'S MIN : %d',
-                    lower_s[0])
-
-        cvui.trackbar2(cvuiframe, 90, 170, 300, lower_v, upper_v, 0, 255, 1,
-                       '%.0Lf')
-        cvui.printf(cvuiframe, 10, 180, 0.4, 0xffffff, 'V MAX : %d',
-                    upper_v[0])
-        cvui.printf(cvuiframe, 10, 200, 0.4, 0xffffff, 'V MIN : %d',
-                    lower_v[0])
-
-        cvui.printf(cvuiframe, 10, 260, 0.4, 0xffffff, 'TOP AREA NUMBER')
-        cvui.counter(cvuiframe, 160, 255, top_area_number)
-        top_area_number[0] = max(1, top_area_number[0])
-        top_area_number[0] = min(100, top_area_number[0])
-
-        cvui.printf(cvuiframe, 10, 300, 0.4, 0xffffff, 'CLOSE KERNEL SIZE')
-        cvui.counter(cvuiframe, 160, 295, kernel_size, 2)
-        kernel_size[0] = max(1, kernel_size[0])
-        kernel_size[0] = min(25, kernel_size[0])
-
-        cvui.checkbox(cvuiframe, 10, 340, 'MASK REVERSE', is_reverse)
-
-        # cvui.button(cvuiframe, 160, 337, 'Capture')
-
-        cvui.update()
-        cv.imshow(setting_window_name, cvuiframe)
-
-        # カメラキャプチャ ########################################################
+        # カメラキャプチャ #####################################################
         ret, frame = cap.read()
         if not ret:
             continue
-        frame = cv.resize(frame, (640, 360))
+        resize_frame = cv.resize(frame,
+                                 (int(cap_width / 2), int(cap_height / 2)))
+        hsv_frame = cv.cvtColor(resize_frame, cv.COLOR_BGR2HSV)
 
+        # マウス左クリック時にHSV初期値を設定 ###################################
+        click_point = frame_gui.get_mouse_l_click_point()
         if click_point is not None:
-            hsv = cv.cvtColor(frame, cv.COLOR_BGR2HSV)
-            hsv_point = hsv[click_point[1], click_point[0]]
+            lower_hsv, upper_hsv = set_hsv_point_value(click_point, hsv_frame)
 
-            lower_hsv[0] = max(0, int(hsv_point[0] - 10))
-            lower_hsv[1] = max(0, int(hsv_point[1] - 30))
-            lower_hsv[2] = max(0, int(hsv_point[2] - 30))
-            upper_hsv[0] = min(180, int(hsv_point[0] + 10))
-            upper_hsv[1] = min(255, int(hsv_point[1] + 90))
-            upper_hsv[2] = min(255, int(hsv_point[2] + 90))
-            lower_h[0] = lower_hsv[0] * 2
-            lower_s[0] = lower_hsv[1]
-            lower_v[0] = lower_hsv[2]
-            upper_h[0] = upper_hsv[0] * 2
-            upper_s[0] = upper_hsv[1]
-            upper_v[0] = upper_hsv[2]
+            # SETTING GUIにHSV初期値を設定
+            setting_gui.set_hsv_param(lower_hsv[0] * 2, upper_hsv[0] * 2,
+                                      lower_hsv[1], upper_hsv[1], lower_hsv[2],
+                                      upper_hsv[2])
 
-            click_point = None
+        # SETTING GUIから設定値を取得 ########################################
+        lower_h, upper_h = setting_gui.get_h_param()
+        lower_s, upper_s = setting_gui.get_s_param()
+        lower_v, upper_v = setting_gui.get_v_param()
+        closing_kernel_size = setting_gui.get_closing_kernel_size_param()
+        top_area_number = setting_gui.get_top_area_number_param()
+        is_reverse = setting_gui.get_is_reverse_param()
 
-        mask = np.zeros(frame.shape, np.uint8)
-        if hsv_point is not None:
-            lower_hsv[0] = int(lower_h[0] / 2)
-            lower_hsv[1] = int(lower_s[0])
-            lower_hsv[2] = int(lower_v[0])
-            upper_hsv[0] = int(upper_h[0] / 2)
-            upper_hsv[1] = int(upper_s[0])
-            upper_hsv[2] = int(upper_v[0])
+        # HSV閾値をOpenCV処理用に格納 ※Hの有効範囲は通常0~360だがOpenCVでは0～180
+        lower_hsv = [int(lower_h / 2), int(lower_s), int(lower_v)]
+        upper_hsv = [int(upper_h / 2), int(upper_s), int(upper_v)]
 
-            hsv_frame = cv.cvtColor(frame, cv.COLOR_BGR2HSV)
-            mask_hsv = cv.inRange(hsv_frame, np.array(lower_hsv),
-                                  np.array(upper_hsv))
+        # HSV値でのマスクを取得
+        mask = process_hsv_extract(hsv_frame, lower_hsv, upper_hsv,
+                                   closing_kernel_size, top_area_number,
+                                   is_reverse)
 
-            kernel = np.ones((kernel_size[0], kernel_size[0]), np.uint8)
-            mask_hsv = cv.morphologyEx(mask_hsv, cv.MORPH_CLOSE, kernel)
+        # HSVマスクでの切り抜き画像生成
+        cutout_image = cv.bitwise_and(resize_frame, mask)
 
-            contours = cv.findContours(mask_hsv, cv.RETR_EXTERNAL,
-                                       cv.CHAIN_APPROX_SIMPLE)[0]
-            contours = sorted(
-                contours, key=lambda x: cv.contourArea(x), reverse=True)
-            for i, controur in enumerate(contours):
-                if i < top_area_number[0]:
-                    mask = cv.drawContours(
-                        mask, [controur],
-                        -1,
-                        color=(255, 255, 255),
-                        thickness=-1)
+        # GUI描画更新
+        setting_gui.update()
+        frame_gui.update(resize_frame)
+        debug_gui.update(mask, cutout_image)
+        setting_gui.show()
+        debug_gui.show()
+        frame_gui.show()
 
-            if is_reverse[0]:
-                mask = cv.bitwise_not(mask)
+        # キー入力(ESC:プログラム終了、C:キャプチャ) ############################
+        # ※SETTING GUIの「CONTINUOUS CAPTURE」を有効時には
+        #   C押下に関わらず、連続キャプチャを実施
+        key = cv.waitKey(waittime)
+        is_continuous = setting_gui.get_is_continuous_param()
+        if key == 99 or is_continuous:  # C
+            path_image_file = os.path.join(path_save_image,
+                                           '{:05}.png'.format(capture_count))
+            cv.imwrite(path_image_file, frame)
 
-        cutout_image = cv.bitwise_and(frame, mask)
-        debug_image = cv.hconcat([mask, cutout_image])
+            path_mask_file = os.path.join(path_save_mask,
+                                          '{:05}.png'.format(capture_count))
+            mask = cv.resize(mask, (frame.shape[1], frame.shape[0]))
+            cv.imwrite(path_mask_file, mask)
 
-        cv.imshow(mask_window_name, debug_image)
-        cv.imshow(image_window_name, frame)
-        key = cv.waitKey(10)
-        if key == 99:  # C
-            cv.imwrite(
-                os.path.join('capture', 'image',
-                             '{:05}.png'.format(capture_count)), frame)
-            cv.imwrite(
-                os.path.join('capture', 'mask',
-                             '{:05}.png'.format(capture_count)), mask)
-            cv.imwrite(
-                os.path.join('capture', 'maskimage',
-                             '{:05}.png'.format(capture_count)), cutout_image)
+            path_mask_file = os.path.join(path_save_cutoutimage,
+                                          '{:05}.png'.format(capture_count))
+            cutout_image = cv.bitwise_and(frame, mask)
+            cv.imwrite(path_mask_file, cutout_image)
+
             print('capture:', '{:05}.png'.format(capture_count))
+
             capture_count += 1
         if key == 27:  # ESC
             break
+
+
+def set_hsv_point_value(point, hsv_frame):
+    """
+    [summary]
+        指定箇所のHSV値からHSVマスク用の閾値を取得
+    Parameters
+    ----------
+    point : [[int, int]]
+        [description]
+            指定箇所
+    hsv_frame : [frame]
+        [description]
+            HSV変換後画像
+    """
+    lower_hsv = [0, 0, 0]
+    upper_hsv = [0, 0, 0]
+
+    hsv_value = hsv_frame[point[1], point[0]]
+
+    lower_hsv[0] = max(0, int(hsv_value[0] - 10))
+    lower_hsv[1] = max(0, int(hsv_value[1] - 30))
+    lower_hsv[2] = max(0, int(hsv_value[2] - 30))
+    upper_hsv[0] = min(180, int(hsv_value[0] + 10))
+    upper_hsv[1] = min(255, int(hsv_value[1] + 90))
+    upper_hsv[2] = min(255, int(hsv_value[2] + 90))
+
+    return lower_hsv, upper_hsv
+
+
+def process_hsv_extract(hsv_frame, lower_hsv, upper_hsv, closing_kernel_size,
+                        top_area_number, is_reverse):
+    """
+    [summary]
+        指定箇所のHSV値からHSVマスク用の閾値を取得
+    Parameters
+    ----------
+    hsv_frame : [frame]
+        [description]
+            HSV変換後画像
+    lower_hsv : [[int, int, int]]
+        [description]
+            H, S, Vの下限値
+    upper_hsv : [[int, int, int]]
+        [description]
+            H, S, Vの上限値
+    closing_kernel_size : [int]
+        [description]
+            クロージング処理時のカーネルサイズ
+    top_area_number : [int]
+        [description]
+            マスク領域について、大きいサイズの領域を上位いくつ表示するか
+    is_reverse : [bool]
+        [description]
+            マスク結果の反転有無
+    """
+    # HSVマスク画像生成
+    mask_hsv = cv.inRange(hsv_frame, np.array(lower_hsv), np.array(upper_hsv))
+
+    # クロージング処理による粒ノイズ除去
+    kernel = np.ones((closing_kernel_size, closing_kernel_size), np.uint8)
+    mask_hsv = cv.morphologyEx(mask_hsv, cv.MORPH_CLOSE, kernel)
+
+    # 大きい領域の上位のみマスク画像として描画する
+    mask = np.zeros(hsv_frame.shape, np.uint8)
+    contours = cv.findContours(mask_hsv, cv.RETR_EXTERNAL,
+                               cv.CHAIN_APPROX_SIMPLE)[0]
+    contours = sorted(contours, key=lambda x: cv.contourArea(x), reverse=True)
+    for i, controur in enumerate(contours):
+        if i < top_area_number:
+            mask = cv.drawContours(
+                mask, [controur], -1, color=(255, 255, 255), thickness=-1)
+
+    # マスク反転
+    if is_reverse:
+        mask = cv.bitwise_not(mask)
+
+    return mask
 
 
 if __name__ == '__main__':

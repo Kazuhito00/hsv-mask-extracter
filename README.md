@@ -1,8 +1,8 @@
 # hsv-mask-extracter
  hsv-mask-extracterはHSV値を閾値にしたマスク画像を生成するプログラムです。
- 
- [![](https://img.youtube.com/vi/R-w-efaOKbY&feature=youtu.be/0.jpg)](https://www.youtube.com/watch?v=R-w-efaOKbY&feature=youtu.be)
- 
+
+[![](https://img.youtube.com/vi/R-w-efaOKbY/0.jpg)](https://www.youtube.com/watch?v=R-w-efaOKbY)
+
 # Requirement
  
 * OpenCV 3.4.2(or later)

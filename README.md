@@ -64,7 +64,7 @@ CONTINUOUS CAPTURE：連写(Cを押さなくても自動で毎フレーム画像
 高橋かずひと(https://twitter.com/KzhtTkhs)
  
 # License 
-cvoverlayimg is under [MIT license](https://en.wikipedia.org/wiki/MIT_License).
+hsv-mask-extracter is under [MIT license](https://en.wikipedia.org/wiki/MIT_License).
 
 # cvui License
 

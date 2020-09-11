@@ -29,7 +29,8 @@ def get_args():
 
     parser = argparse.ArgumentParser()
 
-    parser.add_argument("--device", help='camera device number', default=0)
+    parser.add_argument(
+        "--device", type=int, help='camera device number', default=0)
     parser.add_argument(
         "--width", help='capture width', type=int, default=1280)
     parser.add_argument(

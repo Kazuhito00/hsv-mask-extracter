@@ -29,16 +29,26 @@ def get_args():
 
     parser = argparse.ArgumentParser()
 
-    parser.add_argument(
-        "--device", type=int, help='camera device number', default=0)
-    parser.add_argument(
-        "--width", help='capture width', type=int, default=1280)
-    parser.add_argument(
-        "--height", help='capture height', type=int, default=720)
-    parser.add_argument(
-        "--waittime", help='waitkey time(ms)', type=int, default=10)
-    parser.add_argument(
-        "--pos_offset", help='window position offset', type=int, default=50)
+    parser.add_argument("--device",
+                        type=int,
+                        help='camera device number',
+                        default=0)
+    parser.add_argument("--width",
+                        help='capture width',
+                        type=int,
+                        default=1280)
+    parser.add_argument("--height",
+                        help='capture height',
+                        type=int,
+                        default=720)
+    parser.add_argument("--waittime",
+                        help='waitkey time(ms)',
+                        type=int,
+                        default=10)
+    parser.add_argument("--pos_offset",
+                        help='window position offset',
+                        type=int,
+                        default=50)
 
     args = parser.parse_args()
 
@@ -228,8 +238,10 @@ def process_hsv_extract(hsv_frame, lower_hsv, upper_hsv, closing_kernel_size,
     contours = sorted(contours, key=lambda x: cv.contourArea(x), reverse=True)
     for i, controur in enumerate(contours):
         if i < top_area_number:
-            mask = cv.drawContours(
-                mask, [controur], -1, color=(255, 255, 255), thickness=-1)
+            mask = cv.drawContours(mask, [controur],
+                                   -1,
+                                   color=(255, 255, 255),
+                                   thickness=-1)
 
     # マスク反転
     if is_reverse:

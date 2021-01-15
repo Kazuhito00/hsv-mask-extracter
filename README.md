@@ -1,5 +1,5 @@
 # hsv-mask-extracter
- hsv-mask-extracterはHSV値を閾値にしたマスク画像を生成するプログラムです。
+ hsv-mask-extracterはHSV値を閾値にしたマスク画像を生成するプログラムです。<br>
  マスク画像は[image-mask-replace](https://github.com/Kazuhito00/image-mask-replace)を用いて他画像との合成に使用できます。
 
 ## 動作例(Youtube)
